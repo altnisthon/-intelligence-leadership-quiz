@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>What's Your Leadership Style?</title>
+<title>&intelligence — Leadership Quiz</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -563,7 +563,7 @@
 
 <!-- ══ INTRO SCREEN ══ -->
 <div class="screen active" id="screen-intro">
-  <p class="intro-eyebrow">VEU Alchemist</p>
+  <p class="intro-eyebrow">&intelligence</p>
   <h1 class="intro-title">What kind of leader<br>are <em>you?</em></h1>
   <p class="intro-subtitle">10 real situations. 8 choices each. No right or wrong — just discover your natural leadership style.</p>
   <div class="character-row" id="char-row"></div>
@@ -574,7 +574,7 @@
 <!-- ══ QUIZ SCREEN ══ -->
 <div class="screen" id="screen-quiz">
   <div class="quiz-header">
-    <span class="q-logo">VEU</span>
+    <span class="q-logo">&amp;intelligence</span>
     <div class="progress-wrap">
       <div class="progress-label" id="prog-label">1 of 10</div>
       <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:10%"></div></div>
@@ -587,7 +587,7 @@
 <!-- ══ RESULT SCREEN ══ -->
 <div class="screen" id="screen-result">
   <div class="result-card" id="result-card"></div>
-  <p class="veu-watermark">VEU Alchemist · Leadership Quiz</p>
+  <p class="veu-watermark">&intelligence · Leadership Quiz</p>
 </div>
 
 <script>
@@ -1047,7 +1047,7 @@ function drawCardText(ctx, W, H, sty, res) {
   ctx.letterSpacing = '8px';
   ctx.fillStyle = '#d75c61';
   ctx.font = '600 20px "DM Sans", sans-serif';
-  ctx.fillText('VEU ALCHEMIST', W / 2, 105);
+  ctx.fillText('&intelligence', W / 2, 105);
   ctx.letterSpacing = '4px';
   ctx.fillStyle = '#c0b0ac';
   ctx.font = '400 12px "DM Sans", sans-serif';
@@ -1083,7 +1083,7 @@ function drawCardPills(ctx, W, H, res) {
   ctx.fillStyle = '#c0b0ac';
   ctx.font = '400 12px "DM Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('VEU ALCHEMIST  ·  @VEU_ALCHEMIST', W / 2, H - 38);
+  ctx.fillText('&intelligence  ·  @VEU_ALCHEMIST', W / 2, H - 38);
 }
 
 function drawPills(ctx, items, centerX, startY, bgColor, textColor) {
