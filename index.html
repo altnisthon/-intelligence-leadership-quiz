@@ -994,32 +994,47 @@ function renderShareCard(styleKey) {
   const sty = STYLES[styleKey];
   const imgKey = sty.img;
 
-  const W = 800, H = 1000;
-  // Use an offscreen canvas so it is never "displayed" in the DOM
+  const W = 800, H = 1080;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // Draw everything EXCEPT the character first (no taint yet)
   drawCardBackground(ctx, W, H);
   drawCardText(ctx, W, H, sty, res);
 
-  // Load character via Image — base64 src is same-origin, no taint
   const charImg = new Image();
   charImg.onload = () => {
-    const imgSize = 320;
-    ctx.drawImage(charImg, (W - imgSize) / 2, 350, imgSize, imgSize);
+    // Draw character using destination-in to strip white background
+    // First draw char onto a temp canvas, then composite
+    const tmp = document.createElement('canvas');
+    tmp.width = W; tmp.height = H;
+    const tctx = tmp.getContext('2d');
+
+    // Draw char large and centered
+    const imgSize = 380;
+    const imgX = (W - imgSize) / 2;
+    const imgY = 330;
+    tctx.drawImage(charImg, imgX, imgY, imgSize, imgSize);
+
+    // Use 'multiply' blend on main canvas to knock out near-white bg
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(tmp, 0, 0);
+    ctx.restore();
+
+    // Draw char again normally on top so colors stay true
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    // Use a slightly smaller inset to exclude the white box edges
+    ctx.drawImage(charImg, imgX + 10, imgY + 10, imgSize - 20, imgSize - 20);
+    ctx.restore();
+
     drawCardPills(ctx, W, H, res);
 
-    // Export — works because base64 src is treated as same-origin
     const dataUrl = canvas.toDataURL('image/png');
-
-    // Show preview
     document.getElementById('share-canvas-preview').src = dataUrl;
-    // Store on the hidden canvas element for download
-    const hiddenCanvas = document.getElementById('share-canvas');
-    hiddenCanvas.setAttribute('data-url', dataUrl);
+    document.getElementById('share-canvas').setAttribute('data-url', dataUrl);
   };
   charImg.src = 'data:image/png;base64,' + IMAGES[imgKey];
 }
@@ -1027,95 +1042,121 @@ function renderShareCard(styleKey) {
 function drawCardBackground(ctx, W, H) {
   ctx.fillStyle = '#fdf8f5';
   ctx.fillRect(0, 0, W, H);
-  const g1 = ctx.createRadialGradient(0, 0, 0, 0, 0, 500);
-  g1.addColorStop(0, 'rgba(249,217,215,0.55)');
+  const g1 = ctx.createRadialGradient(W*0.1, H*0.1, 0, W*0.1, H*0.1, 520);
+  g1.addColorStop(0, 'rgba(249,217,215,0.6)');
   g1.addColorStop(1, 'rgba(249,217,215,0)');
   ctx.fillStyle = g1;
   ctx.fillRect(0, 0, W, H);
-  const g2 = ctx.createRadialGradient(W, H, 0, W, H, 480);
-  g2.addColorStop(0, 'rgba(241,186,179,0.35)');
+  const g2 = ctx.createRadialGradient(W*0.9, H*0.9, 0, W*0.9, H*0.9, 500);
+  g2.addColorStop(0, 'rgba(241,186,179,0.4)');
   g2.addColorStop(1, 'rgba(241,186,179,0)');
   ctx.fillStyle = g2;
   ctx.fillRect(0, 0, W, H);
+  // Top accent line
   ctx.strokeStyle = '#f1bab3';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(60, 60); ctx.lineTo(W - 60, 60); ctx.stroke();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(60, 56); ctx.lineTo(W - 60, 56); ctx.stroke();
 }
 
 function drawCardText(ctx, W, H, sty, res) {
   ctx.textAlign = 'center';
-  ctx.letterSpacing = '8px';
+  ctx.letterSpacing = '6px';
   ctx.fillStyle = '#d75c61';
-  ctx.font = '600 20px "DM Sans", sans-serif';
-  ctx.fillText('&intelligence', W / 2, 105);
+  ctx.font = '600 22px "DM Sans", sans-serif';
+  ctx.fillText('&intelligence', W / 2, 100);
   ctx.letterSpacing = '4px';
   ctx.fillStyle = '#c0b0ac';
-  ctx.font = '400 12px "DM Sans", sans-serif';
-  ctx.fillText('LEADERSHIP QUIZ', W / 2, 132);
+  ctx.font = '400 11px "DM Sans", sans-serif';
+  ctx.fillText('LEADERSHIP QUIZ', W / 2, 126);
+  // Thin divider under header
+  ctx.strokeStyle = 'rgba(215,92,97,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2 - 60, 140); ctx.lineTo(W/2 + 60, 140); ctx.stroke();
   ctx.letterSpacing = '4px';
   ctx.fillStyle = '#d75c61';
-  ctx.font = '500 12px "DM Sans", sans-serif';
-  ctx.fillText('MY LEADERSHIP STYLE IS', W / 2, 195);
+  ctx.font = '500 11px "DM Sans", sans-serif';
+  ctx.fillText('MY LEADERSHIP STYLE IS', W / 2, 188);
   ctx.letterSpacing = '0px';
   ctx.fillStyle = '#2a1f1e';
-  ctx.font = '300 90px Georgia, serif';
-  ctx.fillText(sty.name, W / 2, 288);
+  ctx.font = '300 96px Georgia, serif';
+  ctx.fillText(sty.name, W / 2, 292);
   ctx.fillStyle = '#d75c61';
-  ctx.font = 'italic 400 28px Georgia, serif';
+  ctx.font = 'italic 400 26px Georgia, serif';
   ctx.fillText(res.tagline, W / 2, 332);
 }
 
 function drawCardPills(ctx, W, H, res) {
   ctx.textAlign = 'center';
   ctx.letterSpacing = '3px';
-  ctx.fillStyle = '#2a1f1e';
-  ctx.font = '600 13px "DM Sans", sans-serif';
-  ctx.fillText('SUPERPOWERS', W / 2, 715);
-  drawPills(ctx, res.strengths.slice(0, 3), W / 2, 725, '#f9d9d7', '#932D28');
-  ctx.fillStyle = '#2a1f1e';
-  ctx.font = '600 13px "DM Sans", sans-serif';
-  ctx.fillText('WATCH OUT FOR', W / 2, 830);
-  drawPills(ctx, res.blindspots.slice(0, 2), W / 2, 840, '#eef2ee', '#1f5033');
+  ctx.fillStyle = '#a08080';
+  ctx.font = '600 11px "DM Sans", sans-serif';
+  ctx.fillText('SUPERPOWERS', W / 2, 752);
+  const spH = drawPillsWrapped(ctx, res.strengths.slice(0, 3), W / 2, 762, '#f9d9d7', '#932D28', W - 80);
+  const bsY = 762 + spH + 44;
+  ctx.fillStyle = '#a08080';
+  ctx.font = '600 11px "DM Sans", sans-serif';
+  ctx.fillText('WATCH OUT FOR', W / 2, bsY);
+  const bsH = drawPillsWrapped(ctx, res.blindspots.slice(0, 2), W / 2, bsY + 10, '#eef2ee', '#1f5033', W - 80);
+  const lineY = bsY + bsH + 54;
   ctx.strokeStyle = '#f1bab3';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(60, H - 70); ctx.lineTo(W - 60, H - 70); ctx.stroke();
-  ctx.letterSpacing = '3px';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(60, lineY); ctx.lineTo(W - 60, lineY); ctx.stroke();
+  ctx.letterSpacing = '2px';
   ctx.fillStyle = '#c0b0ac';
-  ctx.font = '400 12px "DM Sans", sans-serif';
+  ctx.font = '400 11px "DM Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('&intelligence  ·  @VEU_ALCHEMIST', W / 2, H - 38);
+  ctx.fillText('&intelligence  ·  @VEU_ALCHEMIST', W / 2, lineY + 30);
 }
 
-function drawPills(ctx, items, centerX, startY, bgColor, textColor) {
-  const pillH = 38;
-  const paddingX = 22;
-  const gap = 10;
-  ctx.font = '400 16px "DM Sans", sans-serif';
+function drawPillsWrapped(ctx, items, centerX, startY, bgColor, textColor, maxW) {
+  const pillH = 36;
+  const paddingX = 20;
+  const gap = 8;
+  const rowGap = 10;
+  ctx.font = '400 14px "DM Sans", sans-serif';
   ctx.letterSpacing = '0px';
 
-  // Measure all pills
   const widths = items.map(t => ctx.measureText(t).width + paddingX * 2);
-  const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
-  let x = centerX - totalW / 2;
 
+  // Split into rows that fit within maxW
+  const rows = [];
+  let row = [], rowW = 0;
   items.forEach((text, i) => {
     const w = widths[i];
-    const y = startY + 16;
-
-    // Pill bg
-    ctx.fillStyle = bgColor;
-    roundRect(ctx, x, y, w, pillH, pillH / 2);
-    ctx.fill();
-
-    // Pill text
-    ctx.fillStyle = textColor;
-    ctx.textAlign = 'left';
-    ctx.fillText(text, x + paddingX, y + pillH / 2 + 6);
-    ctx.textAlign = 'center';
-
-    x += w + gap;
+    const needed = rowW === 0 ? w : rowW + gap + w;
+    if (needed > maxW && row.length > 0) {
+      rows.push(row);
+      row = [{ text, w }];
+      rowW = w;
+    } else {
+      row.push({ text, w });
+      rowW = needed;
+    }
   });
+  if (row.length) rows.push(row);
+
+  let y = startY + 16;
+  rows.forEach(rowItems => {
+    const totalW = rowItems.reduce((s, it) => s + it.w, 0) + gap * (rowItems.length - 1);
+    let x = centerX - totalW / 2;
+    rowItems.forEach(({ text, w }) => {
+      ctx.fillStyle = bgColor;
+      roundRect(ctx, x, y, w, pillH, pillH / 2);
+      ctx.fill();
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'left';
+      ctx.fillText(text, x + paddingX, y + pillH / 2 + 5);
+      ctx.textAlign = 'center';
+      x += w + gap;
+    });
+    y += pillH + rowGap;
+  });
+
+  return (rows.length * (pillH + rowGap)) + 16;
 }
+
+// drawPills replaced by drawPillsWrapped
+
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
